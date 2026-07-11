@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מצפן הצרכים שלי</title>
+    <script src="assets/tailwind.js"></script>
+    <script src="assets/chart.umd.min.js"></script>
+    <link href="assets/heebo.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Heebo', sans-serif; background-color: #fffdf9; color: #240024; -webkit-font-smoothing: antialiased; }
+        .card-shadow { box-shadow: 0 10px 30px -5px rgba(61, 0, 62, 0.08); }
+        html { scroll-behavior: smooth; }
+        .fade-in { animation: fadeIn 0.35s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .choice-btn { transition: all 0.15s ease-out; }
+        .choice-btn:hover { transform: translateY(-2px); border-color: #b8914f; box-shadow: 0 8px 20px -6px rgba(184,145,79,0.4); }
+        .choice-btn:active { transform: scale(0.99); }
+        .progress-bar-fill { transition: width 0.3s ease-out; }
+
+        /* Guide-mode sliders */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; height: 24px; cursor: pointer; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%; background: #fff; box-shadow: 0 4px 10px rgba(36,0,36,0.2); border: 2px solid #b8914f; margin-top: -9px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #efedf2; border-radius: 4px; }
+        input[type=range]::-moz-range-thumb { height: 24px; width: 24px; border-radius: 50%; background: #fff; border: 2px solid #b8914f; cursor: pointer; }
+        input[type=range]::-moz-range-track { height: 8px; background: #efedf2; border-radius: 4px; }
+
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .card-shadow { box-shadow: none; border: 1px solid #efedf2; }
+            .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
+        .hidden-screen { display: none; }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 md:p-8">
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <header class="text-center mb-8">
+        <h1 class="text-4xl md:text-5xl font-black text-[#240024] tracking-tight mb-3">מצפן הצרכים שלי</h1>
+        <span class="inline-block bg-[#efedf2] text-[#3d003e] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3">שיטת קש"ב &middot; קשר. שקט. בטחון.</span>
+        <p class="text-[#3d003e]/70 text-base md:text-lg font-medium max-w-xl mx-auto">מה באמת מניע אותך - גם כשקשה לשים על זה את האצבע</p>
+    </header>
+
+    <!-- ============ WELCOME ============ -->
+    <section id="screen-welcome" class="fade-in">
+        <div class="bg-white rounded-3xl p-6 md:p-10 card-shadow border border-[#efedf2] max-w-3xl mx-auto">
+            <p class="text-center text-[#3d003e] font-medium mb-8 leading-relaxed">
+                כמה שאלות קצרות, וכל אחת מציגה שני משפטים. בוחרים את מה שמתאר אתכם יותר - וממפים את הצרכים שמניעים אתכם באמת.
+            </p>
+
+            <h2 class="text-center text-sm font-bold text-[#b8914f] uppercase tracking-wider mb-4">מה למפות?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <button onclick="startFlow('self')" class="mode-card group bg-[#fffdf9] border-2 border-[#efedf2] rounded-2xl p-5 text-center hover:border-[#b8914f] transition">
+                    <div class="text-3xl mb-2">🧭</div>
+                    <div class="font-bold text-[#3d003e]">מיפוי אישי</div>
+                    <div class="text-xs text-gray-500 mt-1">להכיר את עצמך</div>
+                </button>
+                <button onclick="startFlow('pro')" class="mode-card group bg-[#fffdf9] border-2 border-[#efedf2] rounded-2xl p-5 text-center hover:border-[#b8914f] transition">
+                    <div class="text-3xl mb-2">💼</div>
+                    <div class="font-bold text-[#3d003e]">פרופיל מקצועי</div>
+                    <div class="text-xs text-gray-500 mt-1">אני בעבודה</div>
+                </button>
+                <button onclick="startFlow('couple')" class="mode-card group bg-[#fffdf9] border-2 border-[#efedf2] rounded-2xl p-5 text-center hover:border-[#b8914f] transition">
+                    <div class="text-3xl mb-2">💞</div>
+                    <div class="font-bold text-[#3d003e]">מיפוי זוגי</div>
+                    <div class="text-xs text-gray-500 mt-1">שני הצדדים</div>
+                </button>
+            </div>
+
+            <div class="text-center">
+                <button onclick="openGuide()" class="text-xs font-medium text-[#3d003e]/50 hover:text-[#b8914f] transition underline">מצב מנחה (לאנשי מקצוע)</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ NAMES ============ -->
+    <section id="screen-names" class="hidden-screen">
+        <div class="max-w-xl mx-auto bg-white rounded-3xl p-8 card-shadow border border-[#efedf2] fade-in">
+            <h2 id="names-title" class="text-2xl font-black text-[#240024] mb-2 text-center">איך קוראים לך?</h2>
+            <p id="names-sub" class="text-[#3d003e]/70 text-sm text-center mb-6">השם ילווה את התוצאה (אפשר גם כינוי).</p>
+            <div id="names-fields" class="space-y-4"></div>
+            <button onclick="submitNames()" class="w-full mt-6 bg-[#3d003e] text-white font-bold py-3 rounded-xl hover:bg-[#240024] transition">ממשיכים לשאלון</button>
+            <div class="text-center mt-3">
+                <button onclick="backToWelcome()" class="text-sm text-gray-400 hover:text-[#3d003e] transition">‹ חזרה</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ QUIZ ============ -->
+    <section id="screen-quiz" class="hidden-screen">
+        <div class="max-w-2xl mx-auto">
+            <div id="quiz-person-tag" class="text-center mb-3 hidden">
+                <span class="inline-block bg-[#3d003e] text-white text-sm font-bold px-4 py-1 rounded-full"></span>
+            </div>
+            <!-- progress -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2 text-sm font-medium text-[#3d003e]/70">
+                    <span id="quiz-counter">שאלה 1</span>
+                    <span id="quiz-total"></span>
+                </div>
+                <div class="w-full h-2 bg-[#efedf2] rounded-full overflow-hidden">
+                    <div id="quiz-progress" class="progress-bar-fill h-full bg-[#b8914f] rounded-full" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div id="quiz-card" class="bg-white rounded-3xl p-6 md:p-8 card-shadow border border-[#efedf2] fade-in">
+                <p class="text-center text-sm font-bold text-[#b8914f] mb-6">מה מתאר אותך יותר?</p>
+                <div class="space-y-4">
+                    <button id="choice-a" onclick="choose('a')" class="choice-btn w-full text-right bg-[#fffdf9] border-2 border-[#efedf2] rounded-2xl p-5 text-[#240024] font-medium leading-relaxed"></button>
+                    <button id="choice-b" onclick="choose('b')" class="choice-btn w-full text-right bg-[#fffdf9] border-2 border-[#efedf2] rounded-2xl p-5 text-[#240024] font-medium leading-relaxed"></button>
+                </div>
+                <div class="mt-6 flex justify-between items-center">
+                    <button id="quiz-back" onclick="goBack()" class="text-sm text-gray-400 hover:text-[#3d003e] transition disabled:opacity-30" >‹ חזרה</button>
+                    <span class="text-xs text-gray-300">מצפן הצרכים שלי</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ EXPANSION OFFER ============ -->
+    <section id="screen-expand" class="hidden-screen">
+        <div class="max-w-xl mx-auto bg-white rounded-3xl p-8 card-shadow border border-[#efedf2] text-center fade-in">
+            <div class="text-4xl mb-3">🔍</div>
+            <h2 class="text-2xl font-black text-[#240024] mb-3">יש לך תמונה טובה</h2>
+            <p class="text-[#3d003e] font-medium mb-8 leading-relaxed">רוצה לחדד? עוד 5 שאלות קצרות ייתנו דיוק מרבי לפרופיל שלך.</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="startExpansion()" class="bg-[#3d003e] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#240024] transition">כן, נחדד - עוד 5 שאלות</button>
+                <button onclick="finishQuiz()" class="text-[#3d003e] font-medium py-2 hover:text-[#b8914f] transition">לא, לתוצאה שלי</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ LEAD GATE ============ -->
+    <section id="screen-gate" class="hidden-screen">
+        <div class="max-w-xl mx-auto bg-white rounded-3xl p-8 card-shadow border border-[#efedf2] fade-in">
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-3">✨</div>
+                <h2 class="text-2xl font-black text-[#240024] mb-2">התוצאה שלך מוכנה</h2>
+                <p class="text-[#3d003e]/80 font-medium">כדי לקבל את המיפוי המלא, נשאיר שם ומייל - והתוצאה נפתחת מיד.</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-[#3d003e] mb-1">שם</label>
+                    <input id="gate-name" type="text" class="w-full bg-[#fffdf9] border border-[#efedf2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#b8914f] transition" placeholder="השם שלך">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-[#3d003e] mb-1">אימייל</label>
+                    <input id="gate-email" type="email" dir="ltr" class="w-full bg-[#fffdf9] border border-[#efedf2] rounded-xl px-4 py-3 text-right focus:outline-none focus:border-[#b8914f] transition" placeholder="name@example.com">
+                </div>
+                <p id="gate-error" class="text-sm text-red-500 hidden">נא למלא שם וכתובת מייל תקינה.</p>
+                <button onclick="submitGate()" class="w-full bg-[#b8914f] text-white font-bold py-3 rounded-xl hover:bg-[#a37f42] transition">הצג לי את התוצאה</button>
+                <p class="text-xs text-gray-400 text-center leading-relaxed">הפרטים נשמרים לצורך שליחת התוצאה בלבד. אפשר להסיר בקשה בכל עת.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ RESULT ============ -->
+    <section id="screen-result" class="hidden-screen">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6 no-print">
+            <span id="result-badge" class="bg-[#efedf2] text-[#3d003e] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">הפרופיל שלי</span>
+            <div class="flex gap-2">
+                <button onclick="window.print()" class="text-sm font-medium text-[#b8914f] bg-[#b8914f]/10 px-4 py-2 rounded-lg hover:bg-[#b8914f]/20 transition">הפקת דו"ח</button>
+                <button onclick="resetAll()" class="text-sm font-medium text-[#3d003e] bg-[#efedf2] px-4 py-2 rounded-lg hover:bg-[#efedf2]/70 transition">התחלה מחדש</button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 md:p-8 card-shadow border border-[#efedf2] mb-6">
+            <div class="w-full max-w-md mx-auto aspect-square relative">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </div>
+
+        <div id="result-analysis"></div>
+
+        <!-- safety + credit (screen) -->
+        <div class="mt-8 pt-6 border-t border-[#efedf2] text-center space-y-3 no-print">
+            <a href="https://moransamun.co.il" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 hover:opacity-80 transition">
+                <img src="assets/logo.png" alt="מורן סמון" class="h-9 w-auto">
+                <span class="text-sm font-bold text-[#3d003e]">מורן סמון</span>
+                <span class="text-sm text-gray-400">&middot; מפתחת שיטת קש"ב</span>
+            </a>
+            <p class="text-xs text-gray-400 leading-relaxed max-w-2xl mx-auto">מצפן הצרכים שלי הוא נקודת פתיחה למחשבה - לא אבחון ולא תחליף לליווי מקצועי. ברגעים של מצוקה ממשית, קו הסיוע של ער"ן זמין תמיד: <span dir="ltr">1201</span>.</p>
+            <p class="text-[11px] text-gray-300 leading-relaxed max-w-2xl mx-auto">מבוסס על מודל ששת הצרכים האנושיים, בהשראת טוני רובינס, בעיבוד והתאמה לשיטת קש"ב - קשר. שקט. בטחון. לניהול משברים ועומס רגשי.</p>
+        </div>
+
+        <!-- letterhead footer (print only) -->
+        <div class="print-only" style="margin-top:32px; padding-top:16px; border-top:2px solid #b8914f; text-align:center;">
+            <img src="assets/logo.png" alt="מורן סמון" style="height:46px; width:auto; margin:0 auto 10px;">
+            <p style="margin:0; font-weight:bold; color:#3d003e; font-size:14px;">מורן סמון, עו"ד ומגשרת</p>
+            <p style="margin:2px 0 0; color:#666; font-size:11px;">מורן סמון - חברת עורכי דין ומגשרים &middot; מתמחים בניהול משברים משפחתיים בקש"ב - קשר. שקט. בטחון.</p>
+            <p style="margin:10px 0 0; color:#888; font-size:10px;" dir="rtl">
+                רח&#39; היצירה 3 (בית ש.א.פ.), רמת גן 5252141 &nbsp;|&nbsp; טל&#39;: <span dir="ltr">03-5662260</span> &nbsp;|&nbsp; פקס: <span dir="ltr">03-5662261</span><br>
+                <span dir="ltr">office@moransamun.co.il</span> &nbsp;|&nbsp; <span dir="ltr">moransamun.co.il</span>
+            </p>
+            <p style="margin:12px 0 0; color:#aaa; font-size:9px;">הופק באמצעות מצפן הצרכים שלי</p>
+        </div>
+    </section>
+
+    <!-- ============ GUIDE MODE (sliders) ============ -->
+    <section id="screen-guide" class="hidden-screen">
+        <div class="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 card-shadow border border-[#efedf2] fade-in">
+            <div class="flex justify-between items-center mb-6 border-b border-[#efedf2] pb-4">
+                <h2 class="text-xl font-bold text-[#3d003e]">מצב מנחה - כוונון ידני</h2>
+                <select id="guide-mode-select" class="bg-[#fffdf9] border border-[#efedf2] rounded-lg px-3 py-1 text-sm font-medium focus:outline-none">
+                    <option value="self">אישי</option>
+                    <option value="pro">מקצועי</option>
+                    <option value="couple">זוגי</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-[#3d003e] mb-1">שם (לא חובה)</label>
+                <input id="guide-name" type="text" class="w-full bg-[#fffdf9] border border-[#efedf2] rounded-xl px-4 py-2 focus:outline-none focus:border-[#b8914f] transition" placeholder="שם הלקוח/ה">
+            </div>
+            <div id="guide-sliders" class="space-y-4"></div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="runGuide()" class="flex-1 bg-[#3d003e] text-white font-bold py-3 rounded-xl hover:bg-[#240024] transition">הצג תוצאה</button>
+                <button onclick="backToWelcome()" class="px-5 text-[#3d003e] font-medium hover:text-[#b8914f] transition">ביטול</button>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+// ============ DATA ============
+const NEED_LABELS = { certainty:'וודאות', variety:'גיוון', significance:'משמעותיות', connection:'אהבה וקשר', growth:'צמיחה', contribution:'תרומה' };
+const NEED_COLORS = { certainty:'#31423a', variety:'#b8914f', significance:'#240024', connection:'#3d003e', growth:'#4a6357', contribution:'#cba564' };
+const RADAR_ORDER = ['certainty','significance','growth','contribution','connection','variety'];
+const ALL_NEEDS = ['certainty','variety','significance','connection','growth','contribution'];
+
+// Questions: 10 core + 5 expansion. a/b each {t: text, n: need}
+const QUESTIONS = [
+  { a:{t:`כשמשנים לי תוכנית ברגע האחרון, משהו בי נלחץ - גם אם זה לטובה.`, n:'certainty'}, b:{t:`כשהכול ידוע מראש משהו בי נכבה, ושינוי פתאומי דווקא מעיר אותי.`, n:'variety'} },
+  { a:{t:`הכי כואב לי כשלא מעריכים את מה שעשיתי.`, n:'significance'}, b:{t:`הכי כואב לי כשמישהו קרוב מתרחק ממני.`, n:'connection'} },
+  { a:{t:`יום טוב הוא יום שבו התקדמתי צעד קדימה.`, n:'growth'}, b:{t:`יום טוב הוא יום שבו עזרתי למישהו.`, n:'contribution'} },
+  { a:{t:`עדיף לי תפקיד יציב וברור, גם אם לא שמים לב אליי או מביעים הערכה.`, n:'certainty'}, b:{t:`עדיף לי להוביל ולהיות בחזית, גם אם אין ודאות.`, n:'significance'} },
+  { a:{t:`חשוב לי לשמור על מה שכבר יציב ועובד.`, n:'certainty'}, b:{t:`חשוב לי להתפתח ולהשתנות, גם אם זה מטלטל.`, n:'growth'} },
+  { a:{t:`מה שמושך אותי בהתחלה חדשה זה הריגוש של משהו חדש.`, n:'variety'}, b:{t:`מה שמושך אותי בהתחלה חדשה זה ההזדמנות להצטיין ולהוכיח יכולת.`, n:'significance'} },
+  { a:{t:`הדרך שלי להתמלא באנרגיות זה לצאת ולחוות משהו חדש.`, n:'variety'}, b:{t:`הדרך שלי להתמלא באנרגיות זה זמן איכות עם הקרובים לי.`, n:'connection'} },
+  { a:{t:`כשקשה לי, הכי עוזר לי לשנות אווירה ולזוז.`, n:'variety'}, b:{t:`כשקשה לי, הכי עוזר לי לעזור למישהו אחר.`, n:'contribution'} },
+  { a:{t:`בתקופה קשה, הכי חסר לי מישהו שיהיה שם בשבילי.`, n:'connection'}, b:{t:`בתקופה קשה, הכי חסר לי להבין מה קורה לי ולמה.`, n:'growth'} },
+  { a:{t:`בקשר קרוב, הכי חשוב לי להרגיש שמקבלים אותי ולא שופטים אותי.`, n:'connection'}, b:{t:`בקשר קרוב, הכי חשוב לי לדעת שאני שם בשביל האחר.`, n:'contribution'} },
+  // expansion
+  { a:{t:`התחלתי הרבה דברים בחיים כי התחלות מלהיבות אותי.`, n:'variety'}, b:{t:`התחלתי הרבה דברים בחיים כי חשוב לי כל הזמן להתפתח.`, n:'growth'} },
+  { a:{t:`הצלחה היא כשאחרים מעריכים את מה שהשגתי.`, n:'significance'}, b:{t:`הצלחה היא להגיע למקום שלא האמנתי שאגיע אליו.`, n:'growth'} },
+  { a:{t:`מניע אותי להשאיר חותם - שיזכרו אותי.`, n:'significance'}, b:{t:`מניע אותי לתת - גם אם אף אחד לא יידע שזה אני.`, n:'contribution'} },
+  { a:{t:`יצא לי לוותר על זמן וכסף כדי לעזור, בלי לחשוב פעמיים.`, n:'contribution'}, b:{t:`קודם כל היציבות שלי ושל הבית - לפני הכול.`, n:'certainty'} },
+  { a:{t:`בזוגיות הכי מרגיע אותי לדעת שיש יציבות ואפשר לסמוך.`, n:'certainty'}, b:{t:`בזוגיות הכי חשובים לי רגעים של קרבה אמיתית.`, n:'connection'} },
+];
+const CORE_COUNT = 10;
+
+// ============ RESULT TEXTS (נוסח סופי מאושר 10.07.2026) ============
+const RESULTS = {
+  certainty: {
+    self: {
+      power:`הוודאות היא הקרקע היציבה שלך. כשהיא במקומה, העומס הפנימי נמוך, ויש מקום לחשוב, לתכנן ולהחליט. זה מה שהופך אותך לאדם שאחרים סומכים עליו שיביא סדר לתוך הכאוס.`,
+      trap:`אבל כשהחיים בעומס, הקרקע נשמטת. תוכנית שמשתנה ברגע האחרון, הודעה מפתיעה, יום שיוצא משליטה, וההצפה עולה. משהו בפנים עובר למצב הישרדות, ואז מגיעה ההיאחזות: נוקשות, עמידה על כך שהכול יהיה "בדיוק ככה", קושי לשחרר. מבחוץ זה נראה שליטת יתר, אבל זה לא אופי - זה הצורך שלך צועק "תחזירו לי קרקע".`,
+      rec:`שינוי קטן בתוכנית מקפיץ את הדופק; בדיקה חוזרת של דברים שכבר נסגרו; ריטואל קבוע שנעשה קריטי ואי אפשר לגעת בו.`,
+      move:`לא נלחמים בצורך - קודם מורידים את ההצפה. השאלה הראשונה: "בסולם מ-0 (רגוע לגמרי) עד 10 (הצפה מלאה) - איפה אני עכשיו?" מעל 6 - זה לא הזמן להחליט. לתת לעצמך עוגן קטן וודאי (רשימה, שגרת בוקר, מקום קבוע), ורק כשהמערכת רגועה - להכניס את אי-הוודאות במנה אחת קטנה ומתוכננת. ודאות אמיתית לא באה מזה שהכול צפוי, אלא מהיכולת לנהל את מה שלא.`,
+    },
+    pro: {
+      power:`בעבודה, הוודאות הופכת אותך לעמוד התווך: דיוק, עמידה בזמנים, וסדר שאפשר להישען עליו. במקום שאחרים מפזרים בו, הקצה שלך הוא זה שלא נופל.`,
+      trap:`כשהעומס בעבודה עולה - דדליין נדחף, המשימות נערמות, ההנחיות משתנות - ההצפה מתורגמת לנוקשות: קושי לאלתר, התנגדות לכל שינוי בנוהל, תקיעות מול הלא-צפוי. זה לא היעדר גמישות - זה צורך שלא מקבל קרקע.`,
+      rec:`שינוי הנחיה של הרגע האחרון מוציא משיווי משקל לכל היום; קושי להתחיל משימה בלי לדעת בדיוק איך היא נגמרת; עומס שמוביל דווקא לבדיקות-יתר במקום להתקדמות.`,
+      move:`הסביבה שמוציאה את המיטב היא כזו עם מסגרת ברורה: תפקיד מוגדר, נהלים, וצפי. כשמגיע שינוי - לבקש אותו מראש ובכתב, לא בהנחתת רגע. ובעומס: לפרק את המשימה הגדולה לצעד אחד ברור וקטן שאפשר לסיים היום. הביטחון נבנה מביצוע, לא מהבטחה.`,
+    },
+    couple: {
+      power:`בקשר, הצורך בוודאות מביא יציבות: בית שאפשר לסמוך עליו, מילה שנשמרת, תחושה של קרקע משותפת. זה העוגן של מערכת היחסים.`,
+      trap:`כשההצפה עולה בקשר - ריב, שינוי, חוסר ודאות לגבי "לאן זה הולך" - הצורך הזה מתלבש כשליטה: דרישה לתשובות עכשיו, קושי לתת מרחב, היאחזות בשגרה שחונקת את הצד השני. זו לא נוקשות מרושעת - זה פחד מאיבוד הקרקע.`,
+      rec:`אחד רוצה "לסגור עכשיו" בזמן שהשני צריך אוויר; שינוי בתוכניות המשותפות הופך למריבה; ביטחון בקשר נמדד ב"כמה הכל צפוי".`,
+      move:`בזמן מתח, קודם מורידים את ההצפה של שני הצדדים - בסולם מ-0 (רגוע לגמרי) עד 10 (הצפה מלאה), מעל 6 לא מקבלים החלטות. אחר כך, הצד שזקוק לוודאות צריך לשמוע דבר אחד: "אנחנו כן, גם אם לא סגרנו הכל עכשיו". עוגן קטן של ודאות - מתי חוזרים לשיחה, מה כבר הוחלט - מרגיע יותר מפתרון גדול ומהיר.`,
+    },
+  },
+  variety: {
+    self: {
+      power:`הגיוון הוא הדלק שלך. אותו ראש שקופץ מנושא לנושא הוא גם זה שמביא רעיונות שאחרים לא רואים, אנרגיה בהתחלות, ויכולת לכבות שריפות שאחרים היו קורסים מולן.`,
+      trap:`יש ראש שזקוק לגירוי כדי להרגיש חי. כשהחיים נעשים שקטים מדי, משהו בפנים מחפש ריגוש - ולפעמים מייצר אותו דרך דרמה, מריבה, או קפיצה לעוד התחלה חדשה במקום לסיים את הקודמת. זה לא חוסר אחריות - זה ראש שמנסה להעיר את עצמו לחיים.`,
+      rec:`עשר התחלות ואפס סיומים; שקט שנעשה מעיק ומעורר צורך "לנער" משהו; ריב שפתאום מרגיש מלא חיים יותר משגרה.`,
+      move:`הגירוי הוא צורך אמיתי - השאלה מאיפה מזינים אותו. לפני שנוצרת הסלמה, לעצור ולשאול: הריגוש הזה בונה או שורף? לנתב אותו למקום שמזין - פרויקט, תנועה, חוויה - במקום לדרמה שגובה מחיר. וכשמתחשק לפתוח עוד התחלה, סיום קטן של משהו קיים ייתן את אותו דופמין בלי ההריסות.`,
+    },
+    pro: {
+      power:`בעבודה, הגיוון הוא מנוע החדשנות: יכולת לרוץ על כמה משימות במקביל, לחשוב מחוץ לקופסה, ולהסתגל מהר כשהכל משתנה. במשבר או בסיעור מוחות - זה הראש שכולם רוצים בחדר.`,
+      trap:`עבודה שגרתית ומונוטונית מכבה את המנוע הזה. כשאין אתגר, מגיעים שעמום, נפילת ביצועים, ופיזור בין משימות בלי לסגור אף אחת. עבודה ממושכת של פרטים קטנים שוחקת במיוחד - לא מחוסר יכולת, אלא מחוסר גירוי.`,
+      rec:`תחילת פרויקט מלאת אנרגיה, וסיומו נגרר; קושי להתרכז במשימה חוזרת; חיפוש מתמיד אחרי "מה הדבר הבא".`,
+      move:`הסביבה שמוציאה את המיטב היא מגוונת: כמה פרויקטים, אתגר מתחלף, מרחב ליזום. אבל צריך עוגן שסוגר קצוות - שותף שמשלים בסבלנות, או שיטה קטנה שממירה "התחלה חדשה" ל"סיום מספק". פרודוקטיביות אמיתית היא לא עוד התחלה, אלא סגירה אחת שמייצרת דופמין.`,
+    },
+    couple: {
+      power:`בזוגיות, הגיוון שומר על הניצוץ: ספונטניות, חוויות משותפות, פתיחות לשינוי, וסירוב לתת לקשר להפוך לשגרה מתה. זה הצד שמזכיר לשניכם שהחיים יכולים להיות כיף.`,
+      trap:`כשהקשר נעשה צפוי מדי, הצורך בגירוי עלול לחפש אותו במקום הלא נכון: לייצר מריבה כדי "להרגיש משהו", לנפח חילוקי דעות, או חוסר שקט שמונע קרבה יציבה. זה לא רצון לפגוע - זה חיפוש נואש אחרי חיוניות.`,
+      rec:`שגרה זוגית מרגישה כמו מחנק לצד אחד ומקלט לצד השני; ויכוחים שמתלקחים משום מקום; תחושה ש"רק כשיש דרמה יש חיבור".`,
+      move:`להזין את הצורך בגיוון יחד, לפני שהוא מזין את עצמו דרך משבר. חוויה חדשה משותפת אחת בשבוע עושה יותר מכל שיחה על "למה אנחנו רבים". וברגע מריבה - לשאול: אנחנו רבים על משהו אמיתי, או שמישהו כאן פשוט צמא לגירוי?`,
+    },
+  },
+  significance: {
+    self: {
+      power:`הצורך במשמעותיות הוא המנוע שדוחף אותך למצוינות: לא להסתפק בבינוני, להשאיר חותם, להיות מישהו שנחשב. זה מה שמביא אותך להישגים שאחרים רק מדברים עליהם.`,
+      trap:`כשההצפה עולה, הצורך להיחשב מתהפך: כל חילוקי דעות נהיים מאבק על "מי צודק", כל ביקורת נשמעת כמו פסילה של הערך שלך, וקשה להאציל כי "רק אני יודע לעשות את זה נכון". זה לא יהירות - זה צורך שמפחד שלא יראו אותו.`,
+      rec:`ויכוח קטן הופך לקרב שאסור להפסיד; הערה עניינית נצרבת כפגיעה אישית; קושי לשחרר שליטה גם כשזה עולה ביוקר.`,
+      move:`הערך שלך לא נמדד בניצחון בוויכוח. כשמתחיל מאבק אגו, לעצור ולשאול: "מה נשמר כאן - העמדה, או התחושה שאני שווה?" הכוח הגדול הוא דווקא ברגע שבו לא מגיבים. מצוינות אמיתית לא צריכה להביס אף אחד - היא מדברת בעד עצמה.`,
+    },
+    pro: {
+      power:`בעבודה, הצורך במשמעותיות מייצר מחויבות יוצאת דופן: לקיחת אחריות אישית, השקעה במשימות מורכבות, ושאיפה להוביל ולהשאיר חותם. זה מי שלא נותן לדברים ליפול.`,
+      trap:`כשההערכה חסרה או העומס גובר, מגיעים מאבקי קרדיט, רגישות לביקורת, וקושי לחלוק הצלחה. תחושת "לא מעריכים אותי כאן" עלולה להרעיל מוטיבציה גבוהה. זה לא אגו ריק - זה צורך בהכרה שלא קיבל מענה.`,
+      rec:`ביקורת מקצועית נחווית כפגיעה אישית; חשיבות גדולה למי מקבל את הקרדיט; קושי לעבוד בלי במה להצלחות.`,
+      move:`הסביבה שמוציאה את המיטב נותנת הכרה והשפעה: הובלת פרויקטים, במה להצלחות, ומרחב להטביע חותם אישי. וכשמגיעה ביקורת - לתרגם אותה לפני שמגיבים: "זו פסילה שלי, או הערה על משימה אחת?" רוב הפעמים זה השני.`,
+    },
+    couple: {
+      power:`בזוגיות, הצורך במשמעותיות מביא כבוד: רצון להיות מוערך בעיני הצד השני, ולתת גם לו להרגיש מיוחד. כשהוא בריא, הוא מייצר קשר שבו שניכם רואים זה את זה.`,
+      trap:`כשההצפה עולה, הצורך הזה נהיה מלחמת אגו: להוכיח נקודה גם במחיר פגיעה, "לנצח" את הריב, זלזול או ביקורתיות. כל אלה בעצם צעקה אחת: "תראה אותי, תגיד לי שאני שווה".`,
+      rec:`ויכוחים שהופכים לתחרות מי צודק; היעלבות מהערה קטנה; תחושה שצד אחד "חייב לנצח" כל דיון.`,
+      move:`בזמן מריבה, לזכור שמאחורי העקשנות עומד צורך בהכרה. במקום להיכנס לקרב, לתת תוקף: "אני רואה אותך, ואני מעריך את מה שאמרת" - זה מוריד את ההצפה מהר יותר מכל ניצחון. הקשר לא צריך מנצח ומפסיד; הוא צריך ששניכם תרגישו נחשבים.`,
+    },
+  },
+  connection: {
+    self: {
+      power:`היכולת שלך להתחבר לאנשים היא נדירה. יש בך קריאה מדויקת של אנשים ושל חדרים, ונתינת חום שנשארת אצל אנשים הרבה אחרי. הקשר הוא מה שמחזיק אותך.`,
+      trap:`אותה רגישות בדיוק עובדת גם נגדך. בעומס רגשי, הערה קטנה, טון קר או שתיקה נרשמים כמעט כפגיעה פיזית. ההצפה עולה, ואז מגיעה אחת משתי תגובות: הסתגרות ואיטום, או התפרצות כדי "שיבינו אותי". שני הקצוות מרחיקים דווקא את מה שהכי יקר לך. זה לא רגזנות - זה הצורך שלך צועק.`,
+      rec:`ביטחון שכועסים עליך בלי שום הוכחה; שתיקה שמצטברת בפנים כדי לא להסתכן; דחייה קטנה שמפילה יום שלם.`,
+      move:`כאן נכנס "עצור-תרגם-בחר". ברגע של תחושת דחייה - לעצור ולתרגם - להפריד בין העובדות לפרשנות: עובדתית מה קרה. פרשנות - איך הרגשתי.האם זו דחייה אמיתית, או הרגישות שמדברת? לשאול "בסולם מ-0 (רגוע לגמרי) עד 10 (הצפה מלאה) - איפה אני עכשיו?", ומעל 6 - לא לשלוח את ההודעה הזאת עכשיו. לתת לזה 24 שעות. רוב הפעמים מתברר שהפגיעה הייתה בפרשנות ולא במציאות - והקשר שרצית לשמור, נשמר.`,
+    },
+    pro: {
+      power:`בעבודה, הצורך בקשר יוצר צוות: נאמנות עמוקה, אוזן קשבת לעמיתים וללקוחות, ויכולת לבנות אווירה חמה שאנשים רוצים להישאר בה. זה הדבק האנושי של המקום.`,
+      trap:`כשההצפה עולה, הצורך הזה עלול להוביל לתלות באישור, קושי לפעול לבד, והיעלבות מביקורת עניינית. יחסים תופסים כל כך הרבה מקום עד שקשה להפריד בין "לא אהבו את העבודה שלי" ל"לא אוהבים אותי". זו לא חולשה - זה צורך שמחפש שייכות.`,
+      rec:`קושי לקבל החלטה בלי אישור של מישהו; ביקורת עניינית שנחווית כדחייה אישית; אנרגיה רבה שמושקעת ביחסים על חשבון המשימה.`,
+      move:`הסביבה שמוציאה את המיטב היא חמה ומבוססת צוות, עם משוב שנמסר באופן אישי. וכשמגיעה ביקורת - ממליצה לתרגם לפני שממהרים להיפגע: "זו הערה על עבודה, לא על מי שאני". שייכות אמיתית בעבודה לא נמדדת בכמה מאשרים אותך, אלא במידת הביטחון של עצמך.`,
+    },
+    couple: {
+      power:`בזוגיות, הצורך בקשר הוא לב מערכת היחסים: הכלה, הקשבה עמוקה, יצירת מרחב בטוח לשיתוף, ונכונות אמיתית לקרבה. זה הצד שהופך שותפות לבית.`,
+      trap:`כשההצפה עולה, הרגישות לדחייה משתלטת: פירוש של כל שתיקה או טון קר כדחייה, ואז או הסתגרות פוגעת או התפרצות "שיבינו אותי". לפעמים ביטול עצמי מוחלט כדי לא להסתכן בעימות, שמצטבר לכעס שקט. זו לא תלותיות - זה צורך שמפחד לאבד את הקשר.`,
+      rec:`צד אחד בטוח שהשני כועס, בלי שנאמר דבר; ויכוחים שנפתחים דווקא מתוך פחד מריחוק; שתיקה שאוגרת עלבונות.`,
+      move:`בזמן מתח, הצד שרגיש לדחייה צריך לשמוע קודם דבר אחד: "אני כאן, והקשר הזה בטוח". זה מוריד את ההצפה ומאפשר שיחה. ולפני שמתפרצים על "הוא לא אוהב אותי" - לתרגם: זו דחייה אמיתית, או הרגישות? 24 שעות עושות את ההבדל.`,
+    },
+  },
+  growth: {
+    self: {
+      power:`הצורך בצמיחה הוא הרעב שלך להתפתח: לא לדרוך במקום, ללמוד, להשתפר, להבין את עצמך ואת העולם. זה מה ששומר אותך חי וסקרן גם כשהחיים משגרתיים.`,
+      trap:`כשההצפה עולה, הרעב להתפתח עלול להתפזר: לקפוץ בין תחומים בלי לסיים, לצבור ידע בלי ליישם, או אי-שקט מתמיד כי "לא התקדמתי מספיק". לפעמים בורחים לפנטזיה על השינוי הבא במקום להתמודד עם ההווה. זה לא חוסר מיקוד - זה צורך שמחפש תנועה קדימה.`,
+      rec:`מדף מלא בקורסים שלא הסתיימו; תחושת "לא עשיתי מספיק" גם ביום פרודוקטיבי; חוסר שקט ברגעים של יציבות.`,
+      move:`צמיחה אמיתית היא לא עוד ידע - היא צעד קטן שמיישמים. כשמגיע גל של רעיונות, לבחור אחד ולהוריד אותו לקרקע: מה הצעד הקטן והמנצח שאפשר לעשות היום? להסתכל על "המאה מטרים הקרובים" במקום על כל הדרך. התקדמות אחת אמיתית שווה יותר מעשר תוכניות.`,
+    },
+    pro: {
+      power:`בעבודה, הצורך בצמיחה מביא רעב ללמידה ולהתקדמות: שאיפה לשפר מיומנויות, לקחת אתגרים, ולהתפתח במסלול. זה מי שלא נתקע ותמיד רוצה את השלב הבא.`,
+      trap:`כשאין אתגר חדש, מגיעים שעמום, תחושת מיצוי מהירה, וחוסר סבלנות לתהליכים ארוכים. תפקיד קבוע מדי מרגיש כמו כלוב, ולפעמים עוזבים בדיוק כשהיה שווה להישאר. זו לא הפכפכנות - זה צורך שצריך אופק.`,
+      rec:`שעמום שמגיע ברגע שמשימה נהיית שגרתית; חוסר סבלנות לתהליך ארוך; משיכה מתמדת ל"תפקיד הבא".`,
+      move:`הסביבה שמוציאה את המיטב מציעה אתגר, השתלמויות ואופק קידום. אבל צמיחה לא חייבת להיות תמיד תפקיד חדש - לפעמים היא עומק בתוך התפקיד הקיים. לפני קפיצה, לשאול: מיציתי את מה שיש כאן, או שהשעמום מדבר?`,
+    },
+    couple: {
+      power:`בזוגיות, הצורך בצמיחה מביא עומק: רצון להתפתח יחד, ללמוד מהמשברים, ולא לתת לקשר לקפוא. זה הצד שהופך זוגיות למסע ולא לתחנה.`,
+      trap:`כשהעומס עולה ומציף, הצמיחה עלולה להיעשות חד-צדדית: אחד רץ קדימה והשני נשאר, ונפער ריחוק. לפעמים לוקחים על עצמכם נשיאה של כל המערכת הזוגית והמשפחתית, ולפעמים בורחים לפנטזיה על "חיים אחרים" במקום להשקיע במה שיש. זו לא בגידה בקשר - זה צורך שמחפש תנועה, ולא מצא אותה בתוך הזוגיות.`,
+      rec:`תחושה שאתם צומחים בקצב או בכיוון שונה; שעמום, העדר אתגר אינטלקטואלי או רגשי שמתפרש כבעיה בקשר; משיכה ל"מה היה יכול להיות" במקום ל"מה אפשר לבנות".`,
+      move:`לצמוח יחד, לא במקביל. פרויקט משותף, למידה משותפת, או אפילו שיחה על החלומות של כל אחד - מזינים את הצורך בתוך הקשר במקום מחוצה לו. וכשמרגישים ריחוק, לשאול: אנחנו באמת לא מתאימים, או שאחד מאיתנו פשוט צמא להתפתח?`,
+    },
+  },
+  contribution: {
+    self: {
+      power:`הצורך בתרומה הוא הלב הגדול שלך: לתת, להשפיע, לעזור, להרגיש שהחיים שלך עושים הבדל למישהו. זו תחושת שליחות אמיתית שנותנת לכל השאר משמעות.`,
+      trap:`כשההצפה עולה, הנתינה עלולה להפוך למלכודת: לתת עד קריסה, להזניח את עצמך ואת מי שקרוב לך כדי להציל אחרים, או לקחת אחריות על דברים שאינם שלך. יש גבול דק בין נתינה למחיקה עצמית. זה לא חוסר גבולות מולד - זה צורך שמזין את עצמו מהצורך של אחרים.`,
+      rec:`קושי להגיד "לא" גם כשאין כוח; תחושת אשמה כשדואגים לעצמך; עייפות עמוקה שמקורה בנתינה בלי גבול.`,
+      move:`אי אפשר למזוג מכוס ריקה. לפני שנותנים, לבדוק: "בסולם מ-0 (רגוע לגמרי) עד 10 (הצפה מלאה) - איפה אני עכשיו?" - נתינה ממקום מוצף היא נתינה ששוחקת. גבולות הם לא אנוכיות; גבולות מגינים על היכולת שלך להמשיך לתת. קודם למלא את עצמך, ואז לתת מהעודף - לא מהרזרבה.`,
+    },
+    pro: {
+      power:`בעבודה, הצורך בתרומה הופך אותך לעמוד של הארגון: עזרה לעמיתים, חניכת חדשים, ואכפתיות כנה להצלחת המקום כולו. זה מי שמרים את כולם, לא רק את עצמו.`,
+      trap:`כשההצפה עולה, לוקחים על עצמם יותר מדי: אחריות של אחרים, משימות שלא שייכות, עומס שפוגע דווקא בליבת העבודה. הנתינה הופכת ממשאב לחיסרון. זה לא חוסר מקצועיות - זה צורך שקשה לו לומר "זה לא שלי".`,
+      rec:`העבודה שלך נדחקת כי עזרת לכולם; קושי לומר "אין לי כרגע"; תחושת אחריות על תוצאות של אנשים אחרים.`,
+      move:`הסביבה שמוציאה את המיטב מאפשרת להדריך ולהשפיע - אבל חובה לשמור על גבול. לפני שלוקחים עוד משימה, לשאול: "אם אקח את זה, מה ייפול אצלי?" תרומה בת-קיימא היא כזו שלא שוחקת את הנותן.`,
+    },
+    couple: {
+      power:`בזוגיות, הצורך בתרומה מביא מסירות: השקעה אמיתית ברווחת הצד השני, תמיכה בצמיחה שלו, ונכונות להיות שם ברגע האמת. זה הצד שבונה שותפות שאפשר להישען עליה.`,
+      trap:`כשההצפה עולה, הנתינה עלולה להפוך לפנקסנות ("נתתי כל כך הרבה ולא קיבלתי") או לביטול עצמי שמצטבר למרמור. לפעמים אחד הופך ל"הורה האחראי" שנושא הכל, מתיש את עצמו, ומאבד את השותף. זו לא קדושה ולא קורבנוּת - זה צורך שנתן בלי לשמור לעצמו.`,
+      rec:`אחד נושא את רוב העומס ומרגיש לבד; נתינה שמלווה בציפייה שתוחזר; מרמור שקט שמצטבר מתחת לפני השטח.`,
+      move:`נתינה בריאה בקשר היא הדדית, לא פנקס חשבונות. לפני שנותנים עד תום, לבדוק: נותנים מאהבה, או כדי להרגיש נחוצים? ולזוג: לחלק את העומס במפורש, כדי שאחד לא יישחק ל"הורה" והשני ל"ילד". גבולות בין שניים הם מה ששומר על שניהם.`,
+    },
+  },
+};
+
+const NEGLECTED = {
+  certainty: { low:`כשחיים  בספונטניות וגמישות, בלי אף עוגן יציב, המערכת נמצאת בכוננות שקטה כל הזמן. הכאוס נראה כמו חופש, אבל מתחת לפני השטח הוא הצפה מתמשכת ברקע ששוחקת בלי שם - חוסר שגרה, קושי לנוח, תחושה ש"אף פעם אין קרקע".`, move:`עוגן קבוע אחד ביום - שגרת בוקר או שגרת ערב קבועה, שעה קבועה, מקום קבוע - מוריד את מפלס הרעש הבסיסי. לא צריך להפוך את הכל לצפוי, מספיק נקודת אחיזה אחת.` },
+  variety: { low:`כשהכל יציבות ושגרה, בלי טיפת ריגוש, המיכל מתרוקן לאט: אפרוריות, אנרגיה נמוכה, תחושה של "לעבור את היום" במקום לחיות אותו. זה לא בהכרח עצב - זה צורך בחיוניות שלא מקבל אוכל.`, move:`דבר קטן וחדש אחת לשבוע - מסלול אחר, טעם חדש, חוויה לא מוכרת - ממלא את המצברים בלי לאיים על היציבות היקרה לך.` },
+  significance: { low:`כשנותנים ומתחברים כל הזמן אבל כמעט אף פעם לא עוצרים כדי להיראות, נבנה מרמור שקט: "אף אחד לא שם לב ומעריך אתמה שאני עושה". הצורך שלא מקבל מענה דולף החוצה כמרירות או כמוטיבציה שדועכת. מגביר את הצורך לקבל אישורים מבחוץ.`, move:`לתת לעצמך להיראות בדבר אחד - לשתף הישג, לקחת קרדיט פעם אחת, בלי אשמה. זו לא יוהרה, זו הזנה של צורך אמיתי.` },
+  connection: { low:`כשהכל הישגים, צמיחה ושליטה, והקשר נדחק שוב ושוב לסוף הרשימה, נבנית בדידות מתחת לפני השטח - ריקנות או שחיקה שמגיעות דווקא באמצע ההצלחה. הצורך בקשר לא נעלם, הוא רק נצבר בשקט.`, move:`שיחה אחת אמיתית בשבוע, בלי מטרה ובלי תכלית - רק חיבור. לא הכל חייב להיות פרודוקטיבי.` },
+  growth: { low:`כשמחזיקים יציבות ונותנים לאחרים אבל מפסיקים להתפתח בעצמך, מתגנבת תקיעות שקטה: תחושה של דריכה במקום, של "עוד יום כמו אתמול", ששוחקת בלי שם.`, move:`ללמוד דבר קטן אחד שהוא רק בשבילך - לא שימושי לאף אחד, רק מסקרן. זה מזין את התנועה קדימה בלי לטלטל שום דבר.` },
+  contribution: { low:`כשדואגים לעצמך, צומחים ומשיגים, אבל בלי תחושה של הבדל שנעשה למישהו מעבר לעצמך, מתגנבת תחושה חלולה של "בשביל מה כל זה". הצורך לתת, כשאין לו מקום, משאיר ריק.`, move:`מעשה נתינה קטן אחד שאין בו חשבון - לעזור למישהו בלי תמורה. זה ממלא בדיוק את החלל הזה.` },
+};
+
+const CONFLICT = {
+  step1Title:`קשר ושקט - קודם מורידים את הלהבה`,
+  step1:`בזמן ריב, כשני הצדדים כבר בהצפה - התחושה גואה, וכל מילה נוספת רק מוסיפה אש. לפני שמנסים לפתור משהו, נסו לתרגל שאלה עצמית: בסולם מ-0 (רגוע לגמרי) עד 10 (בפיצוץ/הצפה רגשית), איפה אני עכשיו? אם אתם נמצאים מעל 6 - זו לא העת להחליט או לסגור את הוויכוח. הכי מועיל בשלב הזה: לחזור במילים שלכם למה שהצד השני אמר, במקום להגיב או להאשים, ולתת לעצמכם רגע לנשום.`,
+  step2:`ברוב הוויכוחים הנושא שעל פני השטח - כסף, זמן, מי עשה מה - הוא רק כיסוי. מתחתיו יש צורך רגשי שכל צד מנסה להגן עליו. אצל [שם צד א׳] הצורך המרכזי הוא [הצורך המוביל שלו/שלה] - אז פתרון טוב הוא כזה שמראה במפורש איך הוא שומר על זה, ולא רק "סוגר" את הנושא הטכני.`,
+  step3:`אצל [שם צד ב׳] הצורך המרכזי הוא [הצורך המוביל שלו/שלה] - חשוב שסיום השיחה יעביר ל[שם צד ב׳] תחושה ברורה שהצורך הזה נשמר, ולא רק הסכמה יבשה על הפרטים.`,
+};
+
+// ============ STATE ============
+let state = {
+  mode: 'self',
+  phase: 'core',      // core | expansion
+  qIndex: 0,
+  answers: [],        // {qi, chosen, other}
+  people: [],         // for couple: [{name, answers}]
+  activePerson: 0,
+  profileName: '',
+  lead: { name:'', email:'' },
+};
+let radarChart = null;
+
+// ============ FLOW ============
+function show(id) {
+  ['screen-welcome','screen-names','screen-quiz','screen-expand','screen-gate','screen-result','screen-guide'].forEach(s => {
+    document.getElementById(s).classList.add('hidden-screen');
+  });
+  document.getElementById(id).classList.remove('hidden-screen');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function startFlow(mode) {
+  state.mode = mode;
+  state.phase = 'core';
+  state.qIndex = 0;
+  state.answers = [];
+  state.people = [];
+  state.activePerson = 0;
+  state.profileName = '';
+  if (mode === 'couple') {
+    state.people = [{name:"צד א'", answers:[]}, {name:"צד ב'", answers:[]}];
+  }
+  renderNames();
+  show('screen-names');
+}
+
+const NAME_INPUT_CLS = 'w-full bg-[#fffdf9] border border-[#efedf2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#b8914f] transition';
+
+function renderNames() {
+  const f = document.getElementById('names-fields');
+  const title = document.getElementById('names-title');
+  const sub = document.getElementById('names-sub');
+  if (state.mode === 'couple') {
+    title.innerText = 'איך קוראים לכם?';
+    sub.innerText = 'השמות ילוו את מפת הקשר שלכם (אפשר גם כינויים).';
+    f.innerHTML = `
+      <div><label class="block text-sm font-semibold text-[#3d003e] mb-1">השם של צד א'</label>
+      <input id="name-a" type="text" class="${NAME_INPUT_CLS}" placeholder="למשל: דנה"></div>
+      <div><label class="block text-sm font-semibold text-[#3d003e] mb-1">השם של צד ב'</label>
+      <input id="name-b" type="text" class="${NAME_INPUT_CLS}" placeholder="למשל: יובל"></div>`;
+  } else {
+    title.innerText = 'איך קוראים לך?';
+    sub.innerText = 'השם ילווה את התוצאה (אפשר גם כינוי).';
+    f.innerHTML = `
+      <div><label class="block text-sm font-semibold text-[#3d003e] mb-1">שם</label>
+      <input id="name-a" type="text" class="${NAME_INPUT_CLS}" placeholder="השם שלך"></div>`;
+  }
+}
+
+function submitNames() {
+  if (state.mode === 'couple') {
+    const a = document.getElementById('name-a').value.trim();
+    const b = document.getElementById('name-b').value.trim();
+    state.people[0].name = a || "צד א'";
+    state.people[1].name = b || "צד ב'";
+  } else {
+    state.profileName = document.getElementById('name-a').value.trim();
+  }
+  updatePersonTag();
+  renderQuestion();
+  show('screen-quiz');
+}
+
+function updatePersonTag() {
+  const tag = document.getElementById('quiz-person-tag');
+  if (state.mode === 'couple') {
+    tag.classList.remove('hidden');
+    tag.querySelector('span').innerText = 'ממפים כעת: ' + state.people[state.activePerson].name;
+  } else {
+    tag.classList.add('hidden');
+  }
+}
+
+function currentAnswers() {
+  return state.mode === 'couple' ? state.people[state.activePerson].answers : state.answers;
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[state.qIndex];
+  const total = state.phase === 'core' ? CORE_COUNT : QUESTIONS.length;
+  document.getElementById('choice-a').innerText = q.a.t;
+  document.getElementById('choice-b').innerText = q.b.t;
+  document.getElementById('quiz-counter').innerText = 'שאלה ' + (state.qIndex + 1);
+  document.getElementById('quiz-total').innerText = 'מתוך ' + total;
+  document.getElementById('quiz-progress').style.width = ((state.qIndex) / total * 100) + '%';
+  const backBtn = document.getElementById('quiz-back');
+  backBtn.disabled = (state.qIndex === 0);
+  const card = document.getElementById('quiz-card');
+  card.classList.remove('fade-in'); void card.offsetWidth; card.classList.add('fade-in');
+}
+
+function choose(side) {
+  const q = QUESTIONS[state.qIndex];
+  const chosen = side === 'a' ? q.a.n : q.b.n;
+  const other = side === 'a' ? q.b.n : q.a.n;
+  const ans = currentAnswers();
+  ans[state.qIndex] = { qi: state.qIndex, chosen, other };
+  state.qIndex++;
+
+  const coreDone = state.qIndex >= CORE_COUNT;
+  const allDone = state.qIndex >= QUESTIONS.length;
+
+  if (state.phase === 'core' && coreDone) {
+    show('screen-expand');
+  } else if (state.phase === 'expansion' && allDone) {
+    finishQuiz();
+  } else {
+    renderQuestion();
+  }
+}
+
+function goBack() {
+  if (state.qIndex > 0) {
+    state.qIndex--;
+    renderQuestion();
+  }
+}
+
+function startExpansion() {
+  state.phase = 'expansion';
+  // qIndex already at CORE_COUNT
+  renderQuestion();
+  show('screen-quiz');
+}
+
+function finishQuiz() {
+  if (state.mode === 'couple' && state.activePerson === 0) {
+    // move to person B
+    state.activePerson = 1;
+    state.phase = 'core';
+    state.qIndex = 0;
+    updatePersonTag();
+    renderQuestion();
+    show('screen-quiz');
+    return;
+  }
+  const gname = document.getElementById('gate-name');
+  if (state.profileName && !gname.value) gname.value = state.profileName;
+  show('screen-gate');
+}
+
+function submitGate() {
+  const name = document.getElementById('gate-name').value.trim();
+  const email = document.getElementById('gate-email').value.trim();
+  const ok = name.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!ok) { document.getElementById('gate-error').classList.remove('hidden'); return; }
+  document.getElementById('gate-error').classList.add('hidden');
+  state.lead = { name, email };
+  saveLead(name, email);
+  show('screen-result');
+  renderResult();
+}
+
+// Lead capture. Currently persists locally so nothing is lost.
+// TO GO LIVE PUBLICLY: replace the marked block with a POST to a form
+// service / CRM / mailing list (Formspree, Google Forms, Mailchimp, etc.),
+// and add a privacy policy + consent (Amendment 13) before collecting.
+function saveLead(name, email) {
+  try {
+    var leads = JSON.parse(localStorage.getItem('needs_compass_leads') || '[]');
+    leads.push({ name, email, mode: state.mode, ts: new Date().toISOString() });
+    localStorage.setItem('needs_compass_leads', JSON.stringify(leads));
+  } catch (e) { /* storage unavailable - ignore */ }
+  // === CRM INTEGRATION POINT ===
+  // fetch('https://your-endpoint', {method:'POST', headers:{'Content-Type':'application/json'},
+  //   body: JSON.stringify({ name, email, mode: state.mode })});
+}
+
+// ============ SCORING ============
+function scoreFromAnswers(answers) {
+  const counts = {}, appear = {};
+  ALL_NEEDS.forEach(n => { counts[n]=0; appear[n]=0; });
+  answers.forEach(a => {
+    if (!a) return;
+    counts[a.chosen]++; appear[a.chosen]++; appear[a.other]++;
+  });
+  const values = {};
+  ALL_NEEDS.forEach(n => { values[n] = appear[n] ? (counts[n]/appear[n])*10 : 0; });
+  return values;
+}
+
+function headToHead(answers, x, y) {
+  for (const a of answers) {
+    if (!a) continue;
+    if ((a.chosen===x && a.other===y) || (a.chosen===y && a.other===x)) return a.chosen;
+  }
+  return null;
+}
+
+// returns sorted [{key,val}] desc, tie-break by head-to-head then radar order
+function rankNeeds(values, answers) {
+  return ALL_NEEDS.map(k => ({key:k, val:values[k]})).sort((p,q) => {
+    if (Math.abs(q.val - p.val) > 0.001) return q.val - p.val;
+    if (answers) { const w = headToHead(answers, p.key, q.key); if (w===p.key) return -1; if (w===q.key) return 1; }
+    return ALL_NEEDS.indexOf(p.key) - ALL_NEEDS.indexOf(q.key);
+  });
+}
+
+// ============ CHART ============
+function drawRadar(datasets) {
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  if (radarChart) radarChart.destroy();
+  Chart.defaults.font.family = 'Heebo';
+  Chart.defaults.color = '#3d003e';
+  radarChart = new Chart(ctx, {
+    type:'radar',
+    data:{ labels: RADAR_ORDER.map(k=>NEED_LABELS[k]), datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      scales:{ r:{ min:0, max:10, ticks:{stepSize:2, display:false}, grid:{color:'rgba(61,0,62,0.1)', circular:true}, angleLines:{color:'rgba(61,0,62,0.1)'}, pointLabels:{font:{size:13, weight:'bold', family:'Heebo'}, color:'#240024'} } },
+      plugins:{ legend:{position:'bottom', labels:{usePointStyle:true, font:{weight:'bold'}}}, tooltip:{backgroundColor:'rgba(36,0,36,0.9)'} } }
+  });
+}
+
+// ============ RENDER RESULT ============
+function needCard(need, values, mode, rankLabel) {
+  const def = RESULTS[need][mode];
+  const color = NEED_COLORS[need];
+  const recLabel = mode==='couple' ? 'זה מוכר לכם אם:' : (mode==='pro' ? 'זה ניכר אם:' : 'זה מוכר לך אם:');
+  return `
+  <div class="bg-white p-6 rounded-2xl border card-shadow relative overflow-hidden mb-6" style="border-color:${color}40">
+    <div class="absolute right-0 top-0 w-1.5 h-full" style="background:${color}"></div>
+    <div class="pr-2">
+      <span class="text-xs font-bold text-gray-400">${rankLabel}</span>
+      <h3 class="text-2xl font-black mb-4" style="color:${color}">${NEED_LABELS[need]} <span class="text-base opacity-40" dir="ltr">(${values[need].toFixed(0)}/10)</span></h3>
+      <div class="space-y-3 text-[15px] leading-relaxed">
+        <p><strong style="color:${color}">הכוח: </strong>${def.power}</p>
+        <div class="bg-red-50/60 border border-red-100 rounded-xl p-3"><strong class="text-red-800 text-sm">המלכודת: </strong>${def.trap}</div>
+        <p class="text-gray-600"><strong>${recLabel} </strong>${def.rec}</p>
+        <div class="bg-[#240024] text-white rounded-xl p-4"><strong class="text-[#b8914f]">המהלך: </strong>${def.move}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function neglectedCard(need, values) {
+  const def = NEGLECTED[need];
+  return `
+  <div class="bg-[#efedf2]/50 p-6 rounded-2xl border border-[#efedf2] mb-6">
+    <span class="text-xs font-bold text-[#b8914f] uppercase tracking-wider">הצורך המוזנח</span>
+    <h3 class="text-xl font-black text-[#3d003e] mb-3">${NEED_LABELS[need]} <span class="text-sm opacity-40" dir="ltr">(${values[need].toFixed(0)}/10)</span></h3>
+    <p class="text-[15px] leading-relaxed mb-2"><strong>כשהוא נמוך: </strong>${def.low}</p>
+    <p class="text-[15px] leading-relaxed"><strong class="text-[#b8914f]">המהלך הקטן: </strong>${def.move}</p>
+  </div>`;
+}
+
+function renderResult() {
+  const badge = document.getElementById('result-badge');
+  const out = document.getElementById('result-analysis');
+
+  if (state.mode === 'couple') {
+    renderCoupleResult(); return;
+  }
+
+  const answers = currentAnswers();
+  const values = scoreFromAnswers(answers);
+  const ranked = rankNeeds(values, answers);
+  badge.innerText = state.mode==='pro' ? 'הפרופיל המקצועי שלי' : 'הפרופיל שלי';
+
+  drawRadar([{
+    label: state.lead.name || 'הפרופיל שלי',
+    data: RADAR_ORDER.map(k=>values[k]),
+    backgroundColor:'rgba(184,145,79,0.2)', borderColor:'#b8914f', pointBackgroundColor:'#b8914f', borderWidth:2, pointRadius:4, fill:true
+  }]);
+
+  const top1 = ranked[0].key, top2 = ranked[1].key, low = ranked[ranked.length-1].key;
+  let html = `<div class="mb-6"><p class="text-sm font-bold text-[#b8914f] uppercase tracking-wider mb-1">${state.lead.name ? state.lead.name + ', הנה המפה שלך' : 'המפה שלך'}</p>
+    <p class="text-[#3d003e] font-medium leading-relaxed bg-[#efedf2]/40 p-4 rounded-xl border border-[#efedf2]">הצרכים הדומיננטיים הם המנוע של ההחלטות שלך. הכרה בהם עוזרת למקסם את הכוח ולמנוע שחיקה.</p></div>`;
+  html += needCard(top1, values, state.mode, 'צורך מוביל #1');
+  html += needCard(top2, values, state.mode, 'צורך מוביל #2');
+  html += neglectedCard(low, values);
+  out.innerHTML = html;
+}
+
+function renderCoupleResult() {
+  const badge = document.getElementById('result-badge');
+  badge.innerText = 'מפת קשר זוגי';
+  const out = document.getElementById('result-analysis');
+
+  const vA = scoreFromAnswers(state.people[0].answers);
+  const vB = scoreFromAnswers(state.people[1].answers);
+  const nameA = state.people[0].name, nameB = state.people[1].name;
+
+  drawRadar([
+    { label:nameA, data:RADAR_ORDER.map(k=>vA[k]), backgroundColor:'rgba(61,0,62,0.2)', borderColor:'#3d003e', pointBackgroundColor:'#3d003e', borderWidth:2, fill:true },
+    { label:nameB, data:RADAR_ORDER.map(k=>vB[k]), backgroundColor:'rgba(184,145,79,0.2)', borderColor:'#b8914f', pointBackgroundColor:'#b8914f', borderWidth:2, fill:true },
+  ]);
+
+  const topA = rankNeeds(vA, state.people[0].answers)[0].key;
+  const topB = rankNeeds(vB, state.people[1].answers)[0].key;
+
+  // gap analysis
+  let maxGap=-1, maxNeed=null, minGap=99, minNeed=null;
+  ALL_NEEDS.forEach(k => { const g=Math.abs(vA[k]-vB[k]); if(g>maxGap){maxGap=g;maxNeed=k;} if(g<minGap){minGap=g;minNeed=k;} });
+
+  let html = `<div class="mb-6"><p class="text-sm font-bold text-[#b8914f] uppercase tracking-wider mb-1">מפת יחסים</p>
+    <h2 class="text-2xl font-black text-[#240024]">${nameA} מול ${nameB}</h2>
+    <p class="text-[#3d003e] font-medium leading-relaxed bg-[#efedf2]/50 p-4 rounded-xl border border-[#efedf2] mt-2">כדי לפתור משברים בזוגיות צריך להבין מה הצורך הרגשי שכל צד זקוק לו. ויכוחים על שגרה או כסף הם לרוב כיסוי למאבק של צרכים מנוגדים.</p></div>`;
+
+  html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white p-5 rounded-2xl border card-shadow" style="border-color:${NEED_COLORS[topA]}40">
+      <h3 class="font-bold text-[#3d003e] mb-1">${nameA} מונע/ת בעיקר מ:</h3>
+      <div class="text-2xl font-black mb-3" style="color:${NEED_COLORS[topA]}">${NEED_LABELS[topA]}</div>
+      <p class="text-sm mb-2"><strong>הכוח: </strong>${RESULTS[topA].couple.power}</p>
+      <div class="bg-red-50/60 border border-red-100 rounded-lg p-2 text-sm"><strong class="text-red-800">סכנה בקונפליקט: </strong>${RESULTS[topA].couple.trap}</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border card-shadow" style="border-color:${NEED_COLORS[topB]}40">
+      <h3 class="font-bold text-[#3d003e] mb-1">${nameB} מונע/ת בעיקר מ:</h3>
+      <div class="text-2xl font-black mb-3" style="color:${NEED_COLORS[topB]}">${NEED_LABELS[topB]}</div>
+      <p class="text-sm mb-2"><strong>הכוח: </strong>${RESULTS[topB].couple.power}</p>
+      <div class="bg-red-50/60 border border-red-100 rounded-lg p-2 text-sm"><strong class="text-red-800">סכנה בקונפליקט: </strong>${RESULTS[topB].couple.trap}</div>
+    </div>
+  </div>`;
+
+  html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white p-4 rounded-xl border border-red-100"><span class="text-xs font-bold text-red-700 uppercase">מוקד הקונפליקט הצפוי</span>
+      <p class="text-sm mt-1"><strong>${NEED_LABELS[maxNeed]}</strong> - זה הציר שבו אתם הכי רחוקים (${vA[maxNeed].toFixed(0)} מול ${vB[maxNeed].toFixed(0)}). כאן צד אחד צמא למשהו שהשני כמעט לא זקוק לו, וזה מקור נפוץ למריבות.</p></div>
+    <div class="bg-white p-4 rounded-xl border border-green-100"><span class="text-xs font-bold text-green-700 uppercase">עוגן החיבור</span>
+      <p class="text-sm mt-1"><strong>${NEED_LABELS[minNeed]}</strong> - כאן אתם הכי קרובים. זו נקודת המפגש הטבעית שאפשר לחזור אליה כשקשה.</p></div>
+  </div>`;
+
+  const step2 = CONFLICT.step2
+    .replaceAll('[שם צד א׳]', nameA)
+    .replaceAll('[הצורך המוביל שלו/שלה]', NEED_LABELS[topA]);
+  const step3 = CONFLICT.step3
+    .replaceAll('[שם צד ב׳]', nameB)
+    .replaceAll('[הצורך המוביל שלו/שלה]', NEED_LABELS[topB]);
+
+  html += `<div class="bg-gradient-to-br from-[#240024] to-[#3d003e] text-[#fffdf9] p-6 rounded-2xl">
+    <h3 class="text-xl font-black text-[#b8914f] mb-4">פתרון קונפליקטים (שיטת קש"ב)</h3>
+    <ul class="space-y-4 text-[15px]">
+      <li class="flex gap-3"><span class="bg-[#b8914f] text-[#240024] w-7 h-7 rounded-full flex items-center justify-center font-black shrink-0">1</span><span><strong>${CONFLICT.step1Title}:</strong> ${CONFLICT.step1}</span></li>
+      <li class="flex gap-3"><span class="bg-[#b8914f] text-[#240024] w-7 h-7 rounded-full flex items-center justify-center font-black shrink-0">2</span><span><strong>מענה ל${nameA} - הצורך ב<span class="text-[#cba564]">${NEED_LABELS[topA]}</span>:</strong> ${step2}</span></li>
+      <li class="flex gap-3"><span class="bg-[#b8914f] text-[#240024] w-7 h-7 rounded-full flex items-center justify-center font-black shrink-0">3</span><span><strong>מענה ל${nameB} - הצורך ב<span class="text-[#cba564]">${NEED_LABELS[topB]}</span>:</strong> ${step3}</span></li>
+    </ul>
+  </div>`;
+
+  out.innerHTML = html;
+}
+
+// ============ GUIDE MODE ============
+function openGuide() {
+  renderGuideSliders();
+  show('screen-guide');
+}
+function renderGuideSliders() {
+  const c = document.getElementById('guide-sliders');
+  c.innerHTML = ALL_NEEDS.map(k => `
+    <div>
+      <div class="flex justify-between mb-1"><label class="text-sm font-bold" style="color:${NEED_COLORS[k]}">${NEED_LABELS[k]}</label><span id="gv-${k}" class="font-black">5</span></div>
+      <input type="range" min="0" max="10" value="5" oninput="document.getElementById('gv-${k}').innerText=this.value" data-need="${k}">
+    </div>`).join('');
+}
+function runGuide() {
+  const mode = document.getElementById('guide-mode-select').value;
+  const gname = document.getElementById('guide-name').value.trim();
+  const values = {};
+  document.querySelectorAll('#guide-sliders input').forEach(inp => { values[inp.dataset.need] = parseInt(inp.value); });
+  state.mode = mode;
+  state.profileName = gname;
+  state.lead = { name:'', email:'' };
+  if (mode === 'couple') {
+    // guide couple uses same values for a simple demo; guide mode is single-profile oriented
+    state.people = [{name:"צד א'", answers:[]},{name:"צד ב'", answers:[]}];
+  }
+  const badge = document.getElementById('result-badge');
+  const out = document.getElementById('result-analysis');
+  const ranked = rankNeeds(values, null);
+  badge.innerText = gname ? 'מצב מנחה - ' + gname : 'מצב מנחה';
+  show('screen-result');
+  drawRadar([{ label: gname || 'פרופיל', data:RADAR_ORDER.map(k=>values[k]), backgroundColor:'rgba(184,145,79,0.2)', borderColor:'#b8914f', pointBackgroundColor:'#b8914f', borderWidth:2, fill:true }]);
+  const m = mode==='couple' ? 'couple' : mode;
+  let html = needCard(ranked[0].key, values, m, 'צורך מוביל #1') + needCard(ranked[1].key, values, m, 'צורך מוביל #2') + neglectedCard(ranked[ranked.length-1].key, values);
+  out.innerHTML = html;
+}
+
+function backToWelcome() { show('screen-welcome'); }
+function resetAll() {
+  state = { mode:'self', phase:'core', qIndex:0, answers:[], people:[], activePerson:0, profileName:'', lead:{name:'',email:''} };
+  document.getElementById('gate-name').value=''; document.getElementById('gate-email').value='';
+  show('screen-welcome');
+}
+
+// init
+show('screen-welcome');
+</script>
+</body>
+</html>
