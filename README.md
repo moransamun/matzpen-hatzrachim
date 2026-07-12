@@ -1,5 +1,4 @@
-[README.md](https://github.com/user-attachments/files/29927080/README.md)
-# מצפן הצרכים שלי
+# מצפן לקש"ב שלי
 
 מה באמת מניע אותך - גם כשקשה לשים על זה את האצבע.
 
